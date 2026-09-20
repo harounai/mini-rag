@@ -39,31 +39,13 @@ This is an educational project where all of the codes where explained (step by s
 
 ## Requirements
 
-- Python 3.10
+- Python 3.12
 
-#### Install Dependencies
-
-```bash
-sudo apt update
-sudo apt install libpq-dev gcc python3-dev
-```
-
-#### Install Python using MiniConda
-
-1) Download and install MiniConda from [here](https://docs.anaconda.com/free/miniconda/#quick-command-line-install)
-2) Create a new environment using the following command:
-```bash
-$ conda create -n mini-rag python=3.10
-```
-3) Activate the environment:
-```bash
-$ conda activate mini-rag
-```
-
-### (Optional) Setup you command line interface for better readability
+#### Install Python and uv on macOS
 
 ```bash
-export PS1="\[\033[01;32m\]\u@\h:\w\n\[\033[00m\]\$ "
+brew install uv
+uv python install 3.12
 ```
 
 ### (Optional) Run Ollama Local LLM Server using Colab + Ngrok
@@ -75,37 +57,49 @@ export PS1="\[\033[01;32m\]\u@\h:\w\n\[\033[00m\]\$ "
 ### Install the required packages
 
 ```bash
-$ pip install -r requirements.txt
+cd /path/to/mini-rag
+uv sync
 ```
+
+This creates the repository-local `.venv` and installs the locked dependencies. Python 3.11 is not supported by this local setup.
 
 ### Setup the environment variables
 
 ```bash
-$ cp .env.example .env
+cp src/.env.example src/.env
 ```
+
+For host development, the example uses PostgreSQL at `localhost:5400`, which is the port published by Docker Compose. Add your API credentials to `src/.env`.
 
 ### Run Alembic Migration
 
 ```bash
-$ alembic upgrade head
+cp src/models/db_schemes/minirag/alembic.ini.example src/models/db_schemes/minirag/alembic.ini
+uv run --directory src/models/db_schemes/minirag alembic upgrade head
 ```
 
-Set your environment variables in the `.env` file. Like `OPENAI_API_KEY` value.
+Set your environment variables in `src/.env`, including `OPENAI_API_KEY`.
 
 ## Run Docker Compose Services
 
 ```bash
-$ cd docker
-$ cp .env.example .env
+cd docker/env
+cp .env.example.app .env.app
+cp .env.example.postgres .env.postgres
+cp .env.example.grafana .env.grafana
+cp .env.example.postgres-exporter .env.postgres-exporter
+cp .env.example.rabbitmq .env.rabbitmq
+cp .env.example.redis .env.redis
+cp ../minirag/alembic.example.ini ../minirag/alembic.ini
 ```
 
-- update `.env` with your credentials
+- update the copied Docker env files with your credentials
 
 
 
 ```bash
-$ cd docker
-$ sudo docker compose up -d
+cd /path/to/mini-rag/docker
+docker compose up --build -d
 ```
 
 ## Access Services
@@ -118,7 +112,7 @@ $ sudo docker compose up -d
 ## Run the FastAPI server (Development Mode)
 
 ```bash
-$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+uv run --directory src uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
 
 # Celery (Development Mode)
@@ -128,19 +122,19 @@ For development, you can run Celery services manually instead of using Docker:
 To Run the **Celery worker**, you need to run the following command in a separate terminal:
 
 ```bash
-$ python -m celery -A celery_app worker --queues=default,file_processing,data_indexing --loglevel=info
+uv run --directory src python -m celery -A celery_app worker --queues=default,file_processing,data_indexing --loglevel=info
 ```
 
 To run the **Beat scheduler**, you can run the following command in a separate terminal:
 
 ```bash
-$ python -m celery -A celery_app beat --loglevel=info
+uv run --directory src python -m celery -A celery_app beat --loglevel=info
 ```
 
 To Run **Flower Dashboard**, you can run the following command in a separate terminal:
 
 ```bash
-$ python -m celery -A celery_app flower --conf=flowerconfig.py
+uv run --directory src python -m celery -A celery_app flower --conf=flowerconfig.py
 ```
 
 
